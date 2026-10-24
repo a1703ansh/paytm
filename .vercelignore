@@ -1,0 +1,8 @@
+# Local secrets and state that must not be uploaded by `vercel deploy`.
+backend/.env
+backend/data/
+backend/**/__pycache__/
+**/*.pyc
+.freebuff/
+frontend/node_modules/
+frontend/dist/

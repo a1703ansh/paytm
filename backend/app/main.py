@@ -28,10 +28,18 @@ class PromoteRequest(PolicyValues):
     note: str = ""
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
+def bootstrap() -> None:
     db.init_db()
     seed.ensure_seeded()
+
+
+# Serverless runtimes can import the app without firing startup events, so seed here too.
+bootstrap()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    bootstrap()
     yield
 
 

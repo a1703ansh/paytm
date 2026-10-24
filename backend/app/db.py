@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 from datetime import datetime, timedelta, timezone
@@ -9,7 +10,19 @@ from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-DB_PATH = DATA_DIR / "resolveos.db"
+
+
+def _db_path() -> Path:
+    override = os.environ.get("RESOLVEOS_DB_PATH")
+    if override:
+        return Path(override)
+    # Vercel Functions have a read-only filesystem except for /tmp.
+    if os.environ.get("VERCEL"):
+        return Path("/tmp/resolveos/resolveos.db")
+    return DATA_DIR / "resolveos.db"
+
+
+DB_PATH = _db_path()
 
 _conn: sqlite3.Connection | None = None
 _lock = threading.RLock()
@@ -151,7 +164,7 @@ def get_conn() -> sqlite3.Connection:
     global _conn
     with _lock:
         if _conn is None:
-            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            DB_PATH.parent.mkdir(parents=True, exist_ok=True)
             _conn = sqlite3.connect(DB_PATH, check_same_thread=False)
             _conn.row_factory = sqlite3.Row
             _conn.execute("PRAGMA journal_mode=WAL")
